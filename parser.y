@@ -3,31 +3,33 @@
 #include "scanner.h"
 #define YYERROR_VERBOSE
 void yyerror(const char *);
-
-void comenzar(void);
-void terminar(void);
-void verificar(void);
-void asignar(const char *, const char *);
-void leer_id(const char *);
-const char *chequear(const char *);
-void escribir_exp(const char *);
-const char *gen_infijo(const char *, const char, const char *);
 }
 
 %code provides {
+void comenzar(void);
+void terminar(void);
+void asignar(const char *, const char *);
+void leer_id(const char *);
+char *chequear(const char *);
+void escribir_exp(const char *);
+char *gen_infijo(const char *, const char *, const char *);
+char *invertir(const char *);
+
 void yyerror(const char *s);
 extern int nerrlex;
 }
 
+%defines "parser.h"
+%output "parser.c"
 %token IDENTIFICADOR CONSTANTE INICIO FIN LEER ESCRIBIR ASIGNACION
 %define api.value.type {char *}
-%right IDENTIFICADOR
+%right ASIGNACION
 %left '+' '-'
 %left '*' '/'
 
 %%
 
-programa		: { comenzar(); } INICIO sentencias FIN { terminar(); }
+programa		: { comenzar(); } INICIO listaSentencias FIN { terminar(); if (nerrlex) YYABORT; else YYACCEPT; }
 			;
 listaSentencias		: sentencia
 			| listaSentencias sentencia
@@ -38,9 +40,9 @@ sentencia		: identificador ASIGNACION expresion ';' { asignar($1, $3); }
 			| error ';' { yyerrok; }
 			;
 listaIdentificadores	: identificador { leer_id($1); }
-			| listaIdentificador ',' identificador { leer_id($3); }
+			| listaIdentificadores ',' identificador { leer_id($3); }
 			;
-identificador		: IDENTIFICADOR { $$ = chequear($1); }
+identificador		: IDENTIFICADOR { chequear($1); $$ = $1; }
 			;
 listaExpresiones	: expresion { escribir_exp($1); }
 			| listaExpresiones ',' expresion
@@ -48,96 +50,98 @@ listaExpresiones	: expresion { escribir_exp($1); }
 expresion		: termino
 			| expresion operadorAditivo termino { $$ = gen_infijo($1, $2, $3); }
 			;
-operadorAditivo		: '+'
-			| '-'
+operadorAditivo		: '+' { $$ = "+"; }
+			| '-' { $$ = "-"; }
+			;
 termino			: primaria
 			| termino operadorMultiplicativo primaria { $$ = gen_infijo($1, $2, $3); }
-operadorAditivo		: '*'
-			| '/'
+			;
+operadorMultiplicativo	: '*' { $$ = "*"; }
+			| '/' { $$ = "/"; }
 			;
 primaria		: identificador
 			| CONSTANTE
-			| '(' expresion ')'
-			| '-' expresion { $$ = gen_infijo($2, $1, NULL); }
+			| '(' expresion ')' { $$ = $2; }
+			| '-' expresion { $$ = invertir($2); }
 			;
 
 %%
 
 struct definiciones {
 	char **vars;
-	int v_size = 0;
-	int t_size = 0;
+	int v_size;
+	int t_size;
 } defs;
 int nerrlex = 0;
 
-const char *declarar_temporal() {
-	char *t_str;
+char *declarar_temporal() {
+	char *t_str = malloc(12);
 	defs.t_size++;
-	printf("Declare Temp&%d,Integer,", defs.t_size);
-
-	sscanf(defs.t_size, "Temp&%d", t_str);
-	
+	printf("Declare Temp&%d,Integer,\n", defs.t_size);
+    
+	sprintf(t_str, "Temp&%d", defs.t_size);
 	return t_str;
 }
 
 const char *declarar_variable(const char *id) {
-	char **new_vars = realloc(defs.vars, defs.v_size + 1);
+	char **new_vars = realloc(defs.vars, (defs.v_size + 1) * sizeof id);
 
 	if(new_vars != NULL) {
 		new_vars[defs.v_size] = (char *) malloc(sizeof id);
+		sprintf(new_vars[defs.v_size], id, sizeof id);
 		defs.vars = new_vars;
 		defs.v_size++;
 	}
 
-	printf("Declare %c,Integer,", id);
+	printf("Declare %s,Integer,\n", id);
 
 	return id;
 }
 
 void escribir_exp(const char *val) {
-	printf("Write %s,Integer,", val);
+	printf("Write %s,Integer,\n", val);
 }
 
 void leer_id(const char *val) {
-	printf("Read %s,Integer,", val);
+	printf("Read %s,Integer,\n", val);
 }
 
 void asignar(const char *val1, const char *val2) {
-	printf("Store %s,%s,", val1, val2);
+	printf("Store %s,%s,\n", val2, val1);
 }
 
-const char *gen_infijo(const char *val1, const char op, const char *val2) {
-	const char *temp = declarar_temporal();
-	char *op_str[4];
+char *gen_infijo(const char *val1, const char *op, const char *val2) {
+	char *temp = declarar_temporal();
+	char *op_str = malloc(4);
 
-	switch(op) {
+	switch(op[0]) {
 	case '-':
-		op_str = "SUBS";
+		strncpy(op_str, "SUBS", 4);
 	break;
 	case '*':
-		op_str = "MULT";
+		strncpy(op_str, "MULT", 4);
 	break;
 	case '/':
-		op_str = "DIV";
+		strncpy(op_str, "DIV", 4);
 	break;
 	case '+':
-		op_str = "ADD";
+		strncpy(op_str, "ADD", 4);
 	break;
 	}
 	
-	printf("%s %s,%s,%s", op_str, val1, val2, temp);
+	printf("%s %s,%s,%s\n", op_str, val1, val2, temp);
 	return temp;
 }
 
-const char *gen_infijo(const char *val) {
-	const char *temp = declarar_temporal();
+char *invertir(const char *val) {
+	char *temp = declarar_temporal();
 
-	printf("INV %s,,%s", val, temp);
+	printf("INV %s,,%s\n", val, temp);
 
 	return temp;
 }
 
-void chequear(const char *id) {
+char *chequear(const char *id) {
 	int ya_definido = 0;
 
 	for (int i = 0; i < defs.v_size; i++) {
@@ -152,14 +156,8 @@ void chequear(const char *id) {
 	}
 }
 
-void verificar() {
-	if (nerrlex) YYABORT;
-	else YYACCEPT;
-}
-
 void terminar(void) {
 	puts("Stop ,,");
-	verificar();
 }
 
 void comenzar(void) {
@@ -181,12 +179,12 @@ int main() {
 		break;
 	}
 
-	printf("Errores sintácticos: %d - Errores léxicos: %d", yynerrs, nerrlex);
+	printf("Errores sintácticos: %d - Errores léxicos: %d\n", yynerrs, nerrlex);
 	return 0;
 }
 
 void yyerror(const char *s){
-	printf("línea #%d - %s", yylineno, s);
+	printf("línea #%d - %s\n", yylineno, s);
 	return;
 }
 
