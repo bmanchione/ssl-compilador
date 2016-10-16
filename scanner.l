@@ -9,8 +9,9 @@
 
 digito [0-9]
 letra [a-zA-Z]
-error_id [a-zA-Z][a-zA-Z0-9]*[^a-zA-Z0-9\ \n\t;,()/*+-]+[a-zA-Z0-9]*
-error_sym [^a-zA-Z0-9\ \t;,()\/\*\+\-]
+error_id [a-zA-Z][a-zA-Z0-9]*[@#]+[a-zA-Z0-9]*
+error_sym [@#]+
+error_cons [0-9][a-zA-Z0-9]+
 %%
 "inicio"					{ return INICIO; }
 "fin"						{ return FIN; }
@@ -29,12 +30,12 @@ error_sym [^a-zA-Z0-9\ \t;,()\/\*\+\-]
 \)						{ return ')'; }
 ,						{ return ','; }
 ;						{ return ';'; }
-{digito}+{letra}+				{ nerrlex++;
-		  				  yyerror("Error léxico: constante con sufijo inválido\n"); }
+{error_cons}					{ nerrlex++;
+		  				  yyerror("Error léxico: constante con sufijo inválido"); }
 {error_id}					{ nerrlex++;
-						  yyerror("Error léxico: identificador inválido\n"); }
+						  yyerror("Error léxico: identificador inválido"); }
 {error_sym}					{ nerrlex++;
-	 					  yyerror("Error léxico: cadena desconocida\n"); }
+	 					  yyerror("Error léxico: cadena desconocida"); }
 .|\n						|
 "//".*						;
 %%
