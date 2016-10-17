@@ -2,7 +2,7 @@
 Trabajo Práctico de un compilador desarrollado usando las herramientas Flex y Bison.
 
 
-##Comentario:
+##INVESTIGACIÓN
 Al terminar el desarrollo del compilador, se ha descubierto que Bison advierte con el siguiente aviso:
 ```
 parser.y: aviso: 4 conflictos desplazamiento/reducción [-Wconflicts-sr]
@@ -113,7 +113,7 @@ Case 2: exp - (exp - exp)
 >If we want to reuse a token in an alternative syntax and give it a different meaning we can do it without restrictions. But, we should know that the precedence level or the associativity property of the token might not be the appropriate. For example, in our grammar we reuse the ‘-‘ token as a unary operator to support negative expressions. However, the ‘-‘ unary operator has right associativity and a higher precedence. In order to override both properties we use the “%prec” declaration and a fake token UMINUS.
 
 <br />
-##CONCLUSIÓN:
+##CONCLUSIÓN
 
 Debido a esta inquietud se decidió separar el proyecto en 2 partes:
 - La primera llamada `original` que contiene el parser tal y como aparece en el documento con las instrucciones del trabajo práctico.
@@ -122,6 +122,6 @@ Debido a esta inquietud se decidió separar el proyecto en 2 partes:
 Para nuestro asombro, una vez aplicado los cambios propuestos por el sitio antes citado, Bison dejó de avisarnos con sus advertencias.
 
 <br />
-##EJECUCIÓN:
+##EJECUCIÓN
 
 Para mayor comodidad a la hora de corregir ambas ramas del trabajo, se creó un archivo `compilador.sh` que al ser ejecutado desde una consola de comandos en Linux nos permitirá interactuar con nuestro trabajo de forma eficiente y cómoda.
