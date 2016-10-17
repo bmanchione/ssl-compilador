@@ -18,7 +18,7 @@ error_cons [0-9][a-zA-Z0-9]+
 "leer"						{ return LEER; }
 "escribir"					{ return ESCRIBIR; }
 {letra}({letra}|{digito})*			{ yylval = strdup(yytext);
-						  return IDENTIFICADOR; }
+						  return ID; }
 {digito}+					{ yylval = strdup(yytext); 
 						  return CONSTANTE; }
 ":="						{ return ASIGNACION; }

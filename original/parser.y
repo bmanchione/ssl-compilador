@@ -21,11 +21,13 @@ extern int nerrlex;
 
 %defines "parser.h"
 %output "parser.c"
-%token IDENTIFICADOR CONSTANTE INICIO FIN LEER ESCRIBIR ASIGNACION
+%token ID CONSTANTE INICIO FIN LEER ESCRIBIR
+%token ASIGNACION ":="
 %define api.value.type {char *}
 %right ASIGNACION
 %left '+' '-'
 %left '*' '/'
+%precedence NEG
 
 %%
 
@@ -42,7 +44,7 @@ sentencia		: identificador ASIGNACION expresion ';' { asignar($1, $3); }
 listaIdentificadores	: identificador { leer_id($1); }
 			| listaIdentificadores ',' identificador { leer_id($3); }
 			;
-identificador		: IDENTIFICADOR { chequear($1); $$ = $1; }
+identificador		: ID { chequear($1); $$ = $1; }
 			;
 listaExpresiones	: expresion { escribir_exp($1); }
 			| listaExpresiones ',' expresion
@@ -62,7 +64,7 @@ operadorMultiplicativo	: '*' { $$ = "*"; }
 primaria		: identificador
 			| CONSTANTE
 			| '(' expresion ')' { $$ = $2; }
-			| '-' expresion { $$ = invertir($2); }
+			| '-' expresion %prec NEG { $$ = invertir($2); }
 			;
 
 %%
@@ -184,7 +186,7 @@ int main() {
 }
 
 void yyerror(const char *s){
-	printf("línea #%d - %s\n", yylineno, s);
+	printf("línea #%d: %s\n", yylineno, s);
 	return;
 }
 
